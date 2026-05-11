@@ -1,6 +1,6 @@
 # Telegram C2 Message Extractor
 
-A security research tool for extracting and analyzing messages from Telegram bots used as covert Command & Control (C2) channels by malware. When malware authors embed Telegram Bot API tokens in their payloads, this tool enables researchers to intercept, monitor, and archive attacker communications using those extracted tokens.
+A security research tool for extracting and analyzing messages from Telegram bots used as covert Command & Control (C2) channels by malware. When malware authors embed Telegram Bot API tokens in their payloads, this tool enables researchers to intercept, monitor, and disrupt attacker communications using those extracted tokens.
 
 ## Background
 
