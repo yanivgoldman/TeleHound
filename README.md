@@ -1,18 +1,20 @@
 # Telegram C2 Message Extractor
 
-A security research tool for extracting and analyzing messages from Telegram bots used as covert Command & Control (C2) channels by malware. When malware authors embed Telegram Bot API tokens in their payloads, this tool enables researchers to intercept, monitor, and disrupt attacker communications using those extracted tokens.
+A security research tool for extracting and analyzing messages from Telegram bots used as covert Command & Control (C2) channels by attackers. When malware authors embed Telegram Bot API tokens in their payloads, this tool enables researchers to intercept, monitor, and disrupt attacker communications using those extracted tokens.
+
+<img width="1100" height="818" alt="image" src="https://github.com/user-attachments/assets/42656d4e-9e3d-4b13-b121-c27459638d2d" />
 
 ## Background
 
-Threat actors increasingly abuse the Telegram Bot API as a lightweight C2 infrastructure. Rather than standing up dedicated C2 servers, attackers embed bot tokens directly in malware samples. The compromised host communicates with the attacker via the Telegram Bot API - receiving commands, exfiltrating data, and reporting status. This architecture gives attackers free, encrypted, and highly available C2 infrastructure that blends with legitimate Telegram traffic.
+Threat actors increasingly abuse the Telegram Bot API as a lightweight C2 infrastructure. Rather than standing up dedicated C2 servers, attackers embed bot tokens directly in malwares. The compromised host communicates with the attacker via the Telegram Bot API - receiving commands, exfiltrating data, and reporting status. This architecture gives attackers free, encrypted, and highly available C2 infrastructure that blends with legitimate Telegram traffic.
 
-**This creates a critical weakness**: the bot token is a shared secret. Once extracted from a malware sample, a security researcher can use the same token to:
+**This creates a critical weakness**: the bot token is a shared secret. Once extracted from a malware sample, we can use the same token to:
 
-- **Monitor C2 commands** sent by the attacker to victim machines
-- **Recover exfiltrated data** (credentials, screenshots, keystrokes, files) forwarded through the bot
+- **Monitor C2 commands and responses** sent between the attacker and victim machines
+- **Recover exfiltrated data** (credentials, screenshots, keystrokes, files, etc.) forwarded through the bot
 - **Identify victims** and scope the extent of a campaign
 - **Map attacker TTPs** by analyzing command patterns and timing
-- **Disrupt operations** - by revoking extracted tokens, severing the attacker’s control over the botnet.
+- **Disrupt operations** - by revoking extracted tokens, severing the attacker’s control.
 
 ## Security Research Workflow
 
@@ -21,7 +23,7 @@ Threat actors increasingly abuse the Telegram Bot API as a lightweight C2 infras
 Bot tokens are typically embedded as plaintext strings in malware samples. Common locations:
 
 - **Hardcoded in source/bytecode**: Search for the pattern `[0-9]+:[A-Za-z0-9_-]{35}`
-- **Obfuscated strings**: Run the sample in a sandbox and monitor HTTP requests to `api.telegram.org`
+- **Obfuscated strings**: Run the sample in a sandbox and monitor HTTP/S requests to `api.telegram.org`
 - **Network traffic capture**: Intercept outbound HTTPS to `api.telegram.org/bot<TOKEN>/`
 - **Memory forensics**: Dump process memory and grep for the token pattern
 - **Supply chain packages**: Inspect malicious PyPI/npm packages for embedded tokens (as in the Checkmarx research)
@@ -43,22 +45,6 @@ https://api.telegram.org/bot<TOKEN>/sendDocument?chat_id=<ATTACKER_CHAT_ID>&capt
 ```
 
 This reveals the attacker's chat ID as a hardcoded parameter - this is the operator's private chat where all stolen data and C2 responses are sent.
-
-**Where to find the chat ID in malware samples:**
-
-- **Hardcoded API URLs**: Search for `chat_id=` in the malware source, strings dump, or decompiled code
-- **Configuration variables**: Look for variables assigned near the bot token (e.g., `CHAT_ID`, `chat`, `admin_id`, `owner_id`)
-- **HTTP request builders**: Trace where the malware constructs its `sendMessage`, `sendDocument`, or `sendPhoto` calls - the `chat_id` parameter is always present
-- **Encrypted config blobs**: If the malware decrypts its config at runtime, the chat ID will be in the decrypted output alongside the token
-
-```bash
-# Extract chat_id from malware source or strings dump
-grep -oP 'chat_id[=:]\s*["\x27]?\K[0-9]+' malware.exe
-strings malware | grep -oP 'chat_id=\K[0-9]+'
-
-# Extract from URL patterns in network captures
-tshark -r capture.pcap -Y 'http.request.uri contains "chat_id"' -T fields -e http.request.uri
-```
 
 > **Why not rely on `getUpdates`?** The `getUpdates` endpoint only returns the most recent unconfirmed messages sent *to* the bot - it does not provide a complete history and will miss the attacker's chat ID entirely if no recent messages exist. The chat ID hardcoded in the malware itself is the authoritative source.
 
@@ -92,18 +78,22 @@ The `forwardMessage` API call is made using the **attacker's bot token**, which 
    curl -s "https://api.telegram.org/bot<TOKEN>/getMe" | python3 -m json.tool
    ```
    The response includes a `username` field (e.g., `"username": "malware_c2_bot"`).
+   
+<img width="1162" height="370" alt="image" src="https://github.com/user-attachments/assets/c9e9f0c3-5291-42ee-bd2c-9f6b4ac23262" />
 
-2. Open Telegram and navigate to `https://t.me/<bot_username>` (e.g., `https://t.me/malware_c2_bot`).
+3. Open Telegram and navigate to `https://t.me/<bot_username>` (e.g., `https://t.me/malware_c2_bot`).
 
-3. Press **Start** or send `/start` to initiate a private chat with the bot. This is required - Telegram bots cannot send messages to users who haven't started a conversation first.
+4. Press **Start** or send `/start` to initiate a private chat with the bot. This is required - Telegram bots cannot send messages to users who haven't started a conversation first.
 
-4. Get your chat ID from the bot's perspective by calling `getUpdates` after sending `/start`:
+5. Get your chat ID from the bot's perspective by calling `getUpdates` after sending `/start`:
    ```bash
    curl -s "https://api.telegram.org/bot<TOKEN>/getUpdates" | python3 -m json.tool
    ```
    Your `/start` message will appear in the response. The `chat.id` field in that update is your **TARGET_CHAT_ID**.
 
-5. Use this chat ID as `TARGET_CHAT_ID` in the extractor config. All forwarded C2 messages will now appear in your private chat with the attacker's bot.
+<img width="1197" height="608" alt="image" src="https://github.com/user-attachments/assets/304b7703-f335-4328-9e53-1a8f8cf8eaeb" />
+
+6. Use this chat ID as `TARGET_CHAT_ID` in the extractor config. All forwarded C2 messages will now appear in your private chat with the attacker's bot.
 
 **Alternative method - add the bot to a group you control:**
 
@@ -142,11 +132,6 @@ python telegram_message_puller.py \
     --start-id 500
 ```
 
-<img width="1100" height="818" alt="image" src="https://github.com/user-attachments/assets/42656d4e-9e3d-4b13-b121-c27459638d2d" />
-
-<img width="1197" height="751" alt="image" src="https://github.com/user-attachments/assets/902095a6-5445-4bce-beaf-30ad1068bef2" />
-
-
 This pulls messages 500, 499, 498, ..., 1 (backward from `start-id` to 1) and copies each into your target chat.
 
 **Example - pull everything and also capture 200 newer messages:**
@@ -175,6 +160,9 @@ Results are saved to the output JSON file (default: `pull_results.json`). Each e
 - **Exfiltrated data**: Stolen credentials, system info, screenshots, documents
 - **Campaign scope**: Unique victim chat IDs indicate number of compromised hosts
 - **Attacker patterns**: Command timing, TTPs, operational hours, language
+
+<img width="1197" height="751" alt="image" src="https://github.com/user-attachments/assets/902095a6-5445-4bce-beaf-30ad1068bef2" />
+
 
 ## Requirements
 
