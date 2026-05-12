@@ -142,6 +142,11 @@ python telegram_message_puller.py \
     --start-id 500
 ```
 
+<img width="1100" height="818" alt="image" src="https://github.com/user-attachments/assets/42656d4e-9e3d-4b13-b121-c27459638d2d" />
+
+<img width="1197" height="751" alt="image" src="https://github.com/user-attachments/assets/902095a6-5445-4bce-beaf-30ad1068bef2" />
+
+
 This pulls messages 500, 499, 498, ..., 1 (backward from `start-id` to 1) and copies each into your target chat.
 
 **Example - pull everything and also capture 200 newer messages:**
