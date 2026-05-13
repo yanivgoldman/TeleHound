@@ -4,6 +4,9 @@ A security research tool for extracting and analyzing messages from Telegram bot
 
 <img width="1100" height="818" alt="image" src="https://github.com/user-attachments/assets/42656d4e-9e3d-4b13-b121-c27459638d2d" />
 
+<figcaption align="center"><b>Figure 1:</b> Messages extracted from XWorm stealer C2 channel.</figcaption>
+
+
 ## Background
 
 Threat actors increasingly abuse the Telegram Bot API as a lightweight C2 infrastructure. Rather than standing up dedicated C2 servers, attackers embed bot tokens directly in malwares. The compromised host communicates with the attacker via the Telegram Bot API - receiving commands, exfiltrating data, and reporting status. This architecture gives attackers free, encrypted, and highly available C2 infrastructure that blends with legitimate Telegram traffic.
@@ -152,16 +155,8 @@ This pulls messages 500→1 (backward), then 501→700 (forward), with a 0.5s de
 
 > **Note**: The script uses `copyMessage` rather than `forwardMessage` - copied messages appear as regular messages in the target chat without a "Forwarded from" header, which keeps the extraction cleaner for analysis.
 
-### 6. Analyze Results
-
-Results are saved to the output JSON file (default: `pull_results.json`). Each entry has a `status` of `ok`, `skip` (message doesn't exist or was deleted), or `fail` (rate limit retry failed). Look for:
-
-- **C2 commands**: Shell commands, download URLs, persistence instructions
-- **Exfiltrated data**: Stolen credentials, system info, screenshots, documents
-- **Campaign scope**: Unique victim chat IDs indicate number of compromised hosts
-- **Attacker patterns**: Command timing, TTPs, operational hours, language
-
 <img width="1197" height="751" alt="image" src="https://github.com/user-attachments/assets/902095a6-5445-4bce-beaf-30ad1068bef2" />
+<figcaption align="center"><b>Figure 2:</b> Messages extracted from a phishing page exfil channel</figcaption>
 
 
 ## Requirements
@@ -203,6 +198,8 @@ pip install requests
 | `"Forbidden"` | Insufficient permissions | Bot lacks read/forward rights in the target chat |
 | `"Message not found"` | Message deleted | Attacker is deleting C2 traffic - work faster or use real-time monitoring |
 | `"Too Many Requests"` | Rate limited | Increase delay between requests; Telegram returns `retry_after` value |
+
+Results are saved to the output JSON file (default: `pull_results.json`). Each entry has a `status` of `ok`, `skip` (message doesn't exist or was deleted), or `fail` (rate limit retry failed).
 
 ## References
 
