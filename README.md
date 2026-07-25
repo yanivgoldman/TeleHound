@@ -120,6 +120,7 @@ This approach is useful if multiple researchers need to view the extracted messa
 | `--source` | Yes | Source chat ID | Attacker's chat ID extracted from the malware's hardcoded API calls (see Step 2) |
 | `--target` | Yes | Target chat ID | Your private chat ID obtained by sending `/start` to the bot (see Step 4) |
 | `--start-id` | Yes | Message ID to start from | Also controls how many messages are pulled backward (pulls from `start-id` down to `1`) |
+| `--delete` | No | Delete the source message after it has been successfully copied | Used only when cleanup or removal of messages is intentionally required after collection |
 | `--forward` | No | Number of messages to pull forward (newer than `start-id`) | Use to capture messages posted after your starting point |
 | `--delay` | No | Seconds between API calls (default: `0.34`) | Increase if hitting rate limits during large extractions |
 | `--out` | No | Output JSON file (default: `pull_results.json`) | Path for the results archive |
