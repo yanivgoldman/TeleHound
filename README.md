@@ -159,6 +159,8 @@ This pulls messages 500→1 (backward), then 501→700 (forward), with a 0.5s de
 <img width="1197" height="751" alt="image" src="https://github.com/user-attachments/assets/902095a6-5445-4bce-beaf-30ad1068bef2" />
 <figcaption align="center"><b>Figure 2:</b> Messages extracted from a phishing page exfil channel</figcaption>
 
+<img width="1600" height="484" alt="image" src="https://github.com/user-attachments/assets/45e20720-57a8-4c94-b576-ca0448f53cc4" />
+<figcaption align="center"><b>Figure 3:</b> Messages extracted from a bot that uses a webhhok for messages transfer, showing webhhok information</figcaption>
 
 ## Requirements
 
