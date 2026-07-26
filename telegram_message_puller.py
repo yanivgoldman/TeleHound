@@ -45,6 +45,7 @@ def copy_one(token: str, source: str, target: str, msg_id: int) -> dict:
 
 
 def delete_one(token: str, source: str, msg_id: int) -> dict:
+
     """Delete a single message from source chat."""
     return call(
         token,
@@ -52,6 +53,70 @@ def delete_one(token: str, source: str, msg_id: int) -> dict:
         chat_id=source,
         message_id=msg_id
     )
+
+
+def get_webhook_info(token: str) -> dict:
+    resp = call(token, "getWebhookInfo")
+
+    if not resp.get("ok"):
+        print(
+            f"Webhook query failed: "
+            f"{resp.get('description', 'unknown error')}"
+        )
+        return {}
+
+    return resp["result"]
+
+
+def print_webhook_info(webhook: dict):
+
+    print()
+    print("Webhook information")
+    print("===================")
+
+    print(
+        f"URL: {webhook.get('url') or '(not configured)'}"
+    )
+
+    print(
+        f"Pending updates: "
+        f"{webhook.get('pending_update_count', 0)}"
+    )
+
+    if webhook.get("ip_address"):
+        print(
+            f"IP address: "
+            f"{webhook.get('ip_address')}"
+        )
+
+    if webhook.get("has_custom_certificate"):
+        print(
+            "Custom certificate: enabled"
+        )
+    else:
+        print(
+            "Custom certificate: disabled"
+        )
+
+    if webhook.get("max_connections"):
+        print(
+            f"Max connections: "
+            f"{webhook.get('max_connections')}"
+        )
+
+    if webhook.get("last_error_date"):
+        print(
+            f"Last error date: "
+            f"{webhook.get('last_error_date')}"
+        )
+
+    if webhook.get("last_error_message"):
+        print(
+            f"Last error: "
+            f"{webhook.get('last_error_message')}"
+        )
+
+    print()
 
 
 def verify_bot(token: str) -> dict:
@@ -306,7 +371,11 @@ def main():
     print(
         f"Bot: @{bot['username']} (id {bot['id']})"
     )
+    
+    webhook = get_webhook_info(full_token)
 
+    print_webhook_info(webhook)
+    
     print(
         f"Source chat: {args.source}"
     )
