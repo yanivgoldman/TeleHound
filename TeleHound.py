@@ -45,7 +45,6 @@ def copy_one(token: str, source: str, target: str, msg_id: int) -> dict:
 
 
 def delete_one(token: str, source: str, msg_id: int) -> dict:
-
     """Delete a single message from source chat."""
     return call(
         token,
@@ -69,52 +68,29 @@ def get_webhook_info(token: str) -> dict:
 
 
 def print_webhook_info(webhook: dict):
-
     print()
     print("Webhook information")
     print("===================")
 
-    print(
-        f"URL: {webhook.get('url') or '(not configured)'}"
-    )
-
-    print(
-        f"Pending updates: "
-        f"{webhook.get('pending_update_count', 0)}"
-    )
+    print(f"URL: {webhook.get('url') or '(not configured)'}")
+    print(f"Pending updates: {webhook.get('pending_update_count', 0)}")
 
     if webhook.get("ip_address"):
-        print(
-            f"IP address: "
-            f"{webhook.get('ip_address')}"
-        )
+        print(f"IP address: {webhook.get('ip_address')}")
 
     if webhook.get("has_custom_certificate"):
-        print(
-            "Custom certificate: enabled"
-        )
+        print("Custom certificate: enabled")
     else:
-        print(
-            "Custom certificate: disabled"
-        )
+        print("Custom certificate: disabled")
 
     if webhook.get("max_connections"):
-        print(
-            f"Max connections: "
-            f"{webhook.get('max_connections')}"
-        )
+        print(f"Max connections: {webhook.get('max_connections')}")
 
     if webhook.get("last_error_date"):
-        print(
-            f"Last error date: "
-            f"{webhook.get('last_error_date')}"
-        )
+        print(f"Last error date: {webhook.get('last_error_date')}")
 
     if webhook.get("last_error_message"):
-        print(
-            f"Last error: "
-            f"{webhook.get('last_error_message')}"
-        )
+        print(f"Last error: {webhook.get('last_error_message')}")
 
     print()
 
@@ -132,14 +108,30 @@ def verify_bot(token: str) -> dict:
     return resp["result"]
 
 
+def logout_bot(token: str) -> bool:
+    """
+    Log out the bot from the Telegram cloud API server.
+    Returns True on success.
+    """
+    resp = call(token, "logOut")
+
+    if resp.get("ok"):
+        print("\nBot session successfully logged out from the cloud API server.")
+        return True
+
+    print(
+        "\nFailed to log out bot session: "
+        f"{resp.get('description', 'unknown error')}"
+    )
+    return False
+
+
 def pull_range(token: str, source: str, target: str,
                msg_ids: list[int], delay: float,
                delete_after_copy: bool = False) -> list[dict]:
-
     results = []
 
     for i, mid in enumerate(msg_ids):
-
         resp = copy_one(
             token,
             source,
@@ -148,7 +140,6 @@ def pull_range(token: str, source: str, target: str,
         )
 
         if resp.get("ok"):
-
             result = {
                 "message_id": mid,
                 "status": "ok",
@@ -156,7 +147,6 @@ def pull_range(token: str, source: str, target: str,
             }
 
             if delete_after_copy:
-
                 delete_resp = delete_one(
                     token,
                     source,
@@ -164,32 +154,24 @@ def pull_range(token: str, source: str, target: str,
                 )
 
                 if delete_resp.get("ok"):
-
                     print(
                         f"  [{i+1}/{len(msg_ids)}] "
                         f"msg {mid} -> copied + deleted"
                     )
-
                     result["deleted"] = True
-
                 else:
-
                     error = delete_resp.get(
                         "description",
                         "unknown"
                     )
-
                     print(
                         f"  [{i+1}/{len(msg_ids)}] "
                         f"msg {mid} -> copied "
                         f"(delete failed: {error})"
                     )
-
                     result["deleted"] = False
                     result["delete_error"] = error
-
             else:
-
                 print(
                     f"  [{i+1}/{len(msg_ids)}] "
                     f"msg {mid} -> copied"
@@ -197,9 +179,7 @@ def pull_range(token: str, source: str, target: str,
 
             results.append(result)
 
-
         elif resp.get("error_code") == 429:
-
             wait = resp.get(
                 "parameters",
                 {}
@@ -224,7 +204,6 @@ def pull_range(token: str, source: str, target: str,
             )
 
             if resp.get("ok"):
-
                 result = {
                     "message_id": mid,
                     "status": "ok",
@@ -232,24 +211,19 @@ def pull_range(token: str, source: str, target: str,
                 }
 
                 if delete_after_copy:
-
                     delete_resp = delete_one(
                         token,
                         source,
                         mid
                     )
-
                     result["deleted"] = delete_resp.get("ok")
 
                 results.append(result)
-
             else:
-
                 desc = resp.get(
                     "description",
                     "unknown"
                 )
-
                 print(
                     f"  [{i+1}/{len(msg_ids)}] "
                     f"msg {mid} -> failed after retry: {desc}"
@@ -263,9 +237,7 @@ def pull_range(token: str, source: str, target: str,
                     }
                 )
 
-
         else:
-
             desc = resp.get(
                 "description",
                 "unknown"
@@ -284,18 +256,33 @@ def pull_range(token: str, source: str, target: str,
                 }
             )
 
-
         time.sleep(delay)
-
 
     return results
 
 
-
 def main():
-
     p = argparse.ArgumentParser(
-        description="Pull Telegram messages by sequential ID"
+        description="TeleHound - A security research tool for extracting, analyzing and disrupting C2 Telegram bots.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""Examples:
+  # Extract messages from message ID 500  backward from chat ID 1938475620 to chat 5547382910:
+  python TeleHound.py \\
+      --token "ABCDEFGHIJ1234567890abcdefghijklmno" \\
+      --bot-id "9823411023" \\
+      --source "1938475620" \\
+      --target "5547382910" \\
+      --start-id 500
+
+  # Extract the first 20 messages from chat ID 4433221100 and log him out:
+  python TeleHound.py \\
+      --token "ZYXWVUTSRQ0987654321zyxwvutsrqponml" \\
+      --bot-id 6543219870 \\
+      --source 4433221100 \\
+      --target 9988776655 \\
+      --start-id 20 \\
+      --logout
+"""
     )
 
     p.add_argument(
@@ -343,6 +330,12 @@ def main():
     )
 
     p.add_argument(
+        "--logout",
+        action="store_true",
+        help="Log out the bot from the Telegram API server after execution"
+    )
+
+    p.add_argument(
         "--delay",
         type=float,
         default=DEFAULT_DELAY,
@@ -356,34 +349,20 @@ def main():
         help="Output JSON file"
     )
 
-
     args = p.parse_args()
 
-
     back_count = args.start_id
-
     full_token = f"{args.bot_id}:{args.token}"
-
 
     bot = verify_bot(full_token)
 
-
-    print(
-        f"Bot: @{bot['username']} (id {bot['id']})"
-    )
+    print(f"Bot: @{bot['username']} (id {bot['id']})")
     
     webhook = get_webhook_info(full_token)
-
     print_webhook_info(webhook)
     
-    print(
-        f"Source chat: {args.source}"
-    )
-
-    print(
-        f"Target chat: {args.target}"
-    )
-
+    print(f"Source chat: {args.source}")
+    print(f"Target chat: {args.target}")
     print(
         f"Start ID: {args.start_id}  |  "
         f"back: {back_count}  |  "
@@ -395,13 +374,10 @@ def main():
 
     print()
 
-
     all_results = []
-
 
     # Backward
     if back_count > 0:
-
         ids = list(
             range(
                 args.start_id,
@@ -425,13 +401,10 @@ def main():
                 args.delete
             )
         )
-
         print()
-
 
     # Forward
     if args.forward > 0:
-
         ids = list(
             range(
                 args.start_id + 1,
@@ -454,28 +427,12 @@ def main():
                 args.delete
             )
         )
-
         print()
 
-
-    ok = sum(
-        1 for r in all_results
-        if r["status"] == "ok"
-    )
-
-    skip = sum(
-        1 for r in all_results
-        if r["status"] == "skip"
-    )
-
-    fail = sum(
-        1 for r in all_results
-        if r["status"] == "fail"
-    )
-
-
+    ok = sum(1 for r in all_results if r["status"] == "ok")
+    skip = sum(1 for r in all_results if r["status"] == "skip")
+    fail = sum(1 for r in all_results if r["status"] == "fail")
     total = len(all_results)
-
 
     print(
         f"Done: {ok} copied, "
@@ -483,7 +440,6 @@ def main():
         f"{fail} failed "
         f"(total {total})"
     )
-
 
     Path(args.out).write_text(
         json.dumps(
@@ -493,11 +449,11 @@ def main():
         )
     )
 
+    print(f"Results saved to {args.out}")
 
-    print(
-        f"Results saved to {args.out}"
-    )
-
+    # Log out session if requested
+    if args.logout:
+        logout_bot(full_token)
 
 
 if __name__ == "__main__":
