@@ -84,11 +84,11 @@ The `forwardMessage` API call is made using the **attacker's bot token**, which 
    
 <img width="1162" height="370" alt="image" src="https://github.com/user-attachments/assets/c9e9f0c3-5291-42ee-bd2c-9f6b4ac23262" />
 
-3. Open Telegram and navigate to `https://t.me/<bot_username>` (e.g., `https://t.me/malware_c2_bot`).
+2. Open Telegram and navigate to `https://t.me/<bot_username>` (e.g., `https://t.me/malware_c2_bot`).
 
-4. Press **Start** or send `/start` to initiate a private chat with the bot. This is required - Telegram bots cannot send messages to users who haven't started a conversation first.
+3. Press **Start** or send `/start` to initiate a private chat with the bot. This is required - Telegram bots cannot send messages to users who haven't started a conversation first.
 
-5. Get your chat ID from the bot's perspective by calling `getUpdates` after sending `/start`:
+4. Get your chat ID from the bot's perspective by calling `getUpdates` after sending `/start`:
    ```bash
    curl -s "https://api.telegram.org/bot<TOKEN>/getUpdates" | python3 -m json.tool
    ```
@@ -96,7 +96,7 @@ The `forwardMessage` API call is made using the **attacker's bot token**, which 
 
 <img width="1197" height="608" alt="image" src="https://github.com/user-attachments/assets/304b7703-f335-4328-9e53-1a8f8cf8eaeb" />
 
-6. Use this chat ID as `TARGET_CHAT_ID` in the extractor config. All forwarded C2 messages will now appear in your private chat with the attacker's bot.
+5. Use this chat ID as `TARGET_CHAT_ID` in the extractor config. All forwarded C2 messages will now appear in your private chat with the attacker's bot.
 
 **Alternative method - add the bot to a group you control:**
 
@@ -120,6 +120,7 @@ This approach is useful if multiple researchers need to view the extracted messa
 | `--source` | Yes | Source chat ID | Attacker's chat ID extracted from the malware's hardcoded API calls (see Step 2) |
 | `--target` | Yes | Target chat ID | Your private chat ID obtained by sending `/start` to the bot (see Step 4) |
 | `--start-id` | Yes | Message ID to start from | Also controls how many messages are pulled backward (pulls from `start-id` down to `1`) |
+| `--logout` | No | Invalidate the bot session | Invalidates the bot session to disrupt or terminate active C2 control |
 | `--delete` | No | Delete the source message after it has been successfully copied | Used only when cleanup or removal of messages is intentionally required after collection |
 | `--forward` | No | Number of messages to pull forward (newer than `start-id`) | Use to capture messages posted after your starting point |
 | `--delay` | No | Seconds between API calls (default: `0.34`) | Increase if hitting rate limits during large extractions |
@@ -128,7 +129,7 @@ This approach is useful if multiple researchers need to view the extracted messa
 **Example - extract the first 500 messages from an attacker's C2 chat:**
 
 ```bash
-python telegram_message_puller.py \
+python TeleHound.py \
     --token "AAE3aXIAPdsMRSfPUi0USKh_TVVDyGn4YIY" \
     --bot-id "8700193185" \
     --source "8547707202" \
@@ -138,10 +139,10 @@ python telegram_message_puller.py \
 
 This pulls messages 500, 499, 498, ..., 1 (backward from `start-id` to 1) and copies each into your target chat.
 
-**Example - pull everything and also capture 200 newer messages:**
+**Example - pull the first 500 messages and also capture 200 newer messages:**
 
 ```bash
-python telegram_message_puller.py \
+python TeleHound.py \
     --token "AAE3aXIAPdsMRSfPUi0USKh_TVVDyGn4YIY" \
     --bot-id "8700193185" \
     --source "8547707202" \
@@ -154,13 +155,27 @@ python telegram_message_puller.py \
 
 This pulls messages 500→1 (backward), then 501→700 (forward), with a 0.5s delay between requests.
 
+
+**Example - pull the first 20 messages from chat ID 4433221100 and log the bot out:**
+
+```bash
+python TeleHound.py \
+    --token "ZYXWVUTSRQ0987654321zyxwvutsrqponml" \
+    --bot-id "8700193185" \
+    --source "4433221100" \
+    --target "8733224442" \
+    --start-id 20 \
+    --logout
+```
+
+
 > **Note**: The script uses `copyMessage` rather than `forwardMessage` - copied messages appear as regular messages in the target chat without a "Forwarded from" header, which keeps the extraction cleaner for analysis.
 
 <img width="1197" height="751" alt="image" src="https://github.com/user-attachments/assets/902095a6-5445-4bce-beaf-30ad1068bef2" />
 <figcaption align="center"><b>Figure 2:</b> Messages extracted from a phishing page exfil channel</figcaption>
 
 <img width="1600" height="484" alt="image" src="https://github.com/user-attachments/assets/45e20720-57a8-4c94-b576-ca0448f53cc4" />
-<figcaption align="center"><b>Figure 3:</b> Messages extracted from a bot that uses a webhhok for messages transfer, showing webhhok information</figcaption>
+<figcaption align="center"><b>Figure 3:</b> Messages extracted from a bot that uses a webhook for messages transfer, showing webhook information</figcaption>
 
 ## Requirements
 
