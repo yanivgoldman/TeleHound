@@ -274,7 +274,7 @@ def main():
       --target "5547382910" \\
       --start-id 500
 
-  # Extract the first 20 messages from chat ID 4433221100 and log him out:
+  # Extract the first 20 messages from chat ID 4433221100 and log the bot out:
   python TeleHound.py \\
       --token "ZYXWVUTSRQ0987654321zyxwvutsrqponml" \\
       --bot-id 6543219870 \\
